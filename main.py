@@ -17,7 +17,9 @@ print(query)
 cursor.execute(query)
 for (_, name, _, nth, year, month, date, hour, minute, second, _, song, diffi) in cursor:
     frame_model = video_model.CaptureModel(config, cnx, (year, month, date, hour, minute, second))
-    frame_model.frames()
+    frame_model.timestamps(wall_clock=True)
+    frame_model.timestamps(wall_clock=False)
+    # frame_model.frames()
 
 cursor.close()
 cnx.close()
