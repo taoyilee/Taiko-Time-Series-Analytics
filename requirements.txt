@@ -7,3 +7,4 @@ pandas==0.22.0
 scipy==1.0.1
 seaborn==0.8.1backcall==0.1.0
 Pillow==5.1.0
+mysql-connector-python==8.0.6
