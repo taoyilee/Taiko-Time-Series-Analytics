@@ -11,6 +11,8 @@ import io
 
 
 class CaptureModel:
+    verbosity = 0
+
     def __init__(self, config: cp.ConfigParser, cnx: mysqlc.Connect, time_stamp):
         self.config = config
         self.cnx = cnx  # type: mysqlc.MySQLConnection
@@ -18,6 +20,7 @@ class CaptureModel:
         self.capture_db = self.config["CAPTURE"].get("database_name")
         (year, month, date, hour, minute, second) = self.time_stamp
         self.data_table_name = f"capture_{year}_{month:02d}_{date:02d}_{hour:02d}_{minute:02d}_{second:02d}"
+        self.verbosity = config["DEFAULT"].getint("verbosity")
 
     def timestamps(self, wall_clock=False):
         cursor_capture = self.cnx.cursor(buffered=True)  # type: cursor.MySQLCursor
@@ -41,16 +44,16 @@ class CaptureModel:
             end = pd.to_datetime(end, unit='s', utc=True)
             begin = begin.tz_convert(timezone("Asia/Taipei"))
             end = end.tz_convert(timezone("Asia/Taipei"))
-        print(f"{begin} - {end}")
+        print(f"{begin} - {end}") if self.verbosity > 0 else None
 
         return begin, end
 
     def frames(self):
         cursor_capture = self.cnx.cursor(buffered=True)  # type: cursor.MySQLCursor
         query = f"SELECT * FROM `{self.capture_db}`.`{self.data_table_name}`"
-        print(query)
+        print(query) if self.verbosity > 0 else None
         cursor_capture.execute(query)
-        print(f"Query: {self.capture_db}/{self.data_table_name} for video captures")
+        print(f"Query: {self.capture_db}/{self.data_table_name} for video captures") if self.verbosity > 0 else None
         image_dir = self.config["DEFAULT"].get("image_directory")
         os.makedirs(image_dir, exist_ok=True)
         i = 0
@@ -59,7 +62,7 @@ class CaptureModel:
             if timestamp < timestamp0:
                 timestamp0 = timestamp
             t = timestamp - timestamp0
-            print(f"{t:.4f} {width}X{height} px")
+            print(f"{t:.4f} {width}X{height} px") if self.verbosity > 0 else None
             img_bytes = imgdec.decode(img_base64)
             image = Image.open(io.BytesIO(img_bytes))  # type: Image.Image
             (b, g, r) = image.split()
