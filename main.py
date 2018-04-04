@@ -26,7 +26,7 @@ def close_connection(cnx: mysqlc.MySQLConnection):
     cnx.close()
 
 
-def read_performance_data(config: cp.ConfigParser, performance_id, write_frames=False):
+def read_performance_data(cnx, config: cp.ConfigParser, performance_id, write_frames=False):
     """
 
     :param config:
@@ -34,7 +34,6 @@ def read_performance_data(config: cp.ConfigParser, performance_id, write_frames=
     :param write_frames:
     :return:
     """
-    cnx = open_connection(config)
     cursor = cnx.cursor(buffered=True)
     query = ("SELECT * FROM taiko_performances INNER JOIN `taiko_songs` "
              "ON `taiko_performances`.`song`=`taiko_songs`.`id` "
@@ -45,7 +44,7 @@ def read_performance_data(config: cp.ConfigParser, performance_id, write_frames=
     (begin, end) = frame_model.timestamps()
     frame_model.frames() if write_frames else None
     cursor.close()
-    close_connection(cnx)
+    return frame_model
 
 
 def read_config():
@@ -71,4 +70,9 @@ def read_args():
 if __name__ == "__main__":
     config = read_config()
     args = read_args()
-    read_performance_data(config, config["DATA"].getint("performance_id"), args["f"])
+    cnx = open_connection(config)
+    frame_model = read_performance_data(cnx, config, config["DATA"].getint("performance_id"), args["f"])
+    tables = frame_model.sensor_data_table(hand="left")
+    left_table, right_table = frame_model.find_table()
+    print(f"{left_table}, {right_table}")
+    close_connection(cnx)

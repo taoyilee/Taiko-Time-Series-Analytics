@@ -48,6 +48,41 @@ class CaptureModel:
 
         return begin, end
 
+    def sensor_data_table(self, hand="left"):
+        database_name = {"left": self.config["CAPTURE"].get("database_left"),
+                         "right": self.config["CAPTURE"].get("database_right")}
+
+        cursor = self.cnx.cursor(buffered=True)  # type: cursor.MySQLCursor
+        query = f"USE `{database_name[hand]}`"
+        print(query) if self.verbosity > 0 else None
+        cursor.execute(query)
+        query = f"SHOW tables"
+        print(query) if self.verbosity > 0 else None
+        cursor.execute(query)
+        tables = []
+        for result in cursor:
+            tables.append(result[0])
+        cursor.execute(query)
+        cursor.close()
+        if not tables:
+            raise ValueError(f"Not appropriate sensor data table for corresponding video frames")
+        return tables
+
+    def find_table(self):
+        return self.find_table_hand(hand="left"), self.find_table_hand(hand="right")
+
+    def find_table_hand(self, hand="left"):
+        (begin, end) = self.timestamps()
+        tables = self.sensor_data_table(hand=hand)
+        for t in tables:
+            table_time = pd.to_datetime(t[5:], format="%Y_%m_%d_%H_%M_%S")
+            table_time = table_time.tz_localize(timezone("Asia/Taipei"))
+            t_delta_begin = table_time - begin
+            t_delta_end = table_time - end
+            index = (t_delta_begin > pd.Timedelta(0)) and (t_delta_end > pd.Timedelta(0))
+            if index:
+                return t
+
     def frames(self):
         cursor_capture = self.cnx.cursor(buffered=True)  # type: cursor.MySQLCursor
         query = f"SELECT * FROM `{self.capture_db}`.`{self.data_table_name}`"
