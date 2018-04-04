@@ -48,12 +48,27 @@ def read_performance_data(config: cp.ConfigParser, performance_id, write_frames=
     close_connection(cnx)
 
 
-if __name__ == "__main__":
+def read_config():
+    """
+    Read configuration file from config.ini
+    :return:
+    """
     config = cp.ConfigParser()
     config.read("config.ini")
+    return config
 
+
+def read_args():
+    """
+    Read command line arguments
+    :return: a dictionary of configurations
+    """
     parser = argparse.ArgumentParser(description='Taiko data analysis toolkit')
     parser.add_argument('-f', help='Write frames', action='store_true')
-    args = vars(parser.parse_args())
+    return vars(parser.parse_args())
 
+
+if __name__ == "__main__":
+    config = read_config()
+    args = read_args()
     read_performance_data(config, config["DATA"].getint("performance_id"), args["f"])
