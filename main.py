@@ -7,7 +7,7 @@ config.read("config.ini")
 cnx = mysqlc.connect(host=config["DEFAULT"].get("mysql_host"), user=config["DEFAULT"].get(
     "mysql_user"), password=config["DEFAULT"].get("mysql_password"))
 
-cnx.database = "bb_subjects"
+cnx.database = config["DATA"].get("database_name")
 cursor = cnx.cursor(buffered=True)
 perf_id = config["DATA"].getint("performance_id")
 query = ("SELECT * FROM taiko_performances INNER JOIN `taiko_songs` "
