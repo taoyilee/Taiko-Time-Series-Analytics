@@ -3,6 +3,9 @@ import mysql.connector as mysqlc
 import configparser as cp
 import app.video.capture_db_model as video_model
 import argparse
+from app.sensor.sensor_db_model import SensorModel
+import pandas as pd
+import matplotlib.pyplot as plt
 
 
 def open_connection(config: cp.ConfigParser):
@@ -41,10 +44,9 @@ def read_performance_data(cnx, config: cp.ConfigParser, performance_id, write_fr
     cursor.execute(query)
     (_, name, _, nth, year, month, date, hour, minute, second, _, song, diffi) = cursor.next()
     frame_model = video_model.CaptureModel(config, cnx, (year, month, date, hour, minute, second))
-    (begin, end) = frame_model.timestamps()
     frame_model.frames() if write_frames else None
     cursor.close()
-    return frame_model
+    return frame_model, name, song, diffi, nth
 
 
 def read_config():
@@ -71,8 +73,13 @@ if __name__ == "__main__":
     config = read_config()
     args = read_args()
     cnx = open_connection(config)
-    frame_model = read_performance_data(cnx, config, config["DATA"].getint("performance_id"), args["f"])
-    tables = frame_model.sensor_data_table(hand="left")
-    left_table, right_table = frame_model.find_table()
-    print(f"{left_table}, {right_table}")
+    frame_model, name, song, diffi, nth = read_performance_data(cnx, config, config["DATA"].getint("performance_id"),
+                                                                args["f"])
+    sensor_data = frame_model.sensor_data()  # type: SensorModel
+    left_ax = sensor_data.get_sensor_data_axis(hand="left", axis_name="imu_ax")  # type: pd.Series
+    right_ax = sensor_data.get_sensor_data_axis(hand="right", axis_name="imu_ax")  # type: pd.Series
+    left_ax.plot()
+    right_ax.plot()
+    plt.title(f"Test Subject#{name} {song}@{diffi} Performance #{nth}", family="IPAPGothic")
+    plt.savefig("sensor.png")
     close_connection(cnx)
