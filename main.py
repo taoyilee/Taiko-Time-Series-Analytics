@@ -46,7 +46,9 @@ def read_performance_data(cnx, config: cp.ConfigParser, performance_id, write_fr
     cursor.execute(query)
     (_, name, _, nth, year, month, date, hour, minute, second, _, song, diffi) = cursor.next()
     frame_model = video_model.CaptureModel(config, cnx, (year, month, date, hour, minute, second))
-    frame_model.frames() if write_frames else None
+    if write_frames:
+        frames = frame_model.frames()
+        frames.write(config["DEFAULT"].get("image_directory"))
     cursor.close()
     return frame_model, name, song, diffi, nth
 

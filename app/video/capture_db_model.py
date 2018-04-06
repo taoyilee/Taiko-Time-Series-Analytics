@@ -9,6 +9,8 @@ from PIL import Image, ImageDraw
 from pytz import timezone
 import io
 from app.sensor.sensor_db_model import SensorModel
+from app.video.timestamped_frame import TimestampedFrame
+from app.video.timestamped_frame_series import TimestampedFrameSeries
 
 
 class CaptureModel:
@@ -95,21 +97,19 @@ class CaptureModel:
         print(query) if self.verbosity > 0 else None
         cursor_capture.execute(query)
         print(f"Query: {self.capture_db}/{self.data_table_name} for video captures") if self.verbosity > 0 else None
-        image_dir = self.config["DEFAULT"].get("image_directory")
-        os.makedirs(image_dir, exist_ok=True)
-        i = 0
         timestamp0 = 1e10
+        frames = TimestampedFrameSeries()
         for (_, timestamp, _, width, height, img_base64) in cursor_capture:
             if timestamp < timestamp0:
                 timestamp0 = timestamp
             t = timestamp - timestamp0
             print(f"{t:.4f} {width}X{height} px") if self.verbosity > 0 else None
             img_bytes = imgdec.decode(img_base64)
-            image = Image.open(io.BytesIO(img_bytes))  # type: Image.Image
-            (b, g, r) = image.split()
-            image = Image.merge("RGB", (r, g, b))
-            image_draw = ImageDraw.Draw(image)  # type: ImageDraw.Draw
+            current_frame = Image.open(io.BytesIO(img_bytes))  # type: Image.Image
+            (b, g, r) = current_frame.split()
+            current_frame = Image.merge("RGB", (r, g, b))
+            image_draw = ImageDraw.Draw(current_frame)  # type: ImageDraw.Draw
             image_draw.text((0, 0), f"{t:.4f}", (255, 0, 0))
-            image.save(os.path.join(image_dir, f"capture_{i:03d}.png"))
-            i += 1
+            frames.append(TimestampedFrame(current_frame, timestamp))
         cursor_capture.close()
+        return frames
