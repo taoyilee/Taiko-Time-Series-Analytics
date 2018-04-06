@@ -7,6 +7,9 @@ verbosity = 0
 
 [DATA]
 database_name = bb_subjects
+# Use comma to separate multiple performance id(s)
+# performance_id = 3,16,31,44,57,70,83,96
+# performance_id = 3
 performance_id = 3,16,31,44,57,70,83,96
 
 [CAPTURE]

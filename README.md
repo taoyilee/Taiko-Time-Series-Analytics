@@ -12,6 +12,8 @@
 10. mysql-connector-python==8.0.6
 
 ## Quick Start
+First copy ***config.ini.sample*** to ***config.ini***, modify settings accordingly
+
 ```commandline
 python main.py
 ```
