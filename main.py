@@ -7,6 +7,8 @@ from app.sensor.sensor_db_model import SensorModel
 import pandas as pd
 import matplotlib.pyplot as plt
 
+import os
+
 
 def open_connection(config: cp.ConfigParser):
     """
@@ -16,7 +18,6 @@ def open_connection(config: cp.ConfigParser):
     """
     cnx = mysqlc.connect(host=config["DEFAULT"].get("mysql_host"), user=config["DEFAULT"].get(
         "mysql_user"), password=config["DEFAULT"].get("mysql_password"))  # type: mysqlc.MySQLConnection
-    cnx.database = config["DATA"].get("database_name")
     return cnx
 
 
@@ -37,6 +38,7 @@ def read_performance_data(cnx, config: cp.ConfigParser, performance_id, write_fr
     :param write_frames:
     :return:
     """
+    cnx.database = config["DATA"].get("database_name")
     cursor = cnx.cursor(buffered=True)
     query = ("SELECT * FROM taiko_performances INNER JOIN `taiko_songs` "
              "ON `taiko_performances`.`song`=`taiko_songs`.`id` "
@@ -73,13 +75,19 @@ if __name__ == "__main__":
     config = read_config()
     args = read_args()
     cnx = open_connection(config)
-    frame_model, name, song, diffi, nth = read_performance_data(cnx, config, config["DATA"].getint("performance_id"),
-                                                                args["f"])
-    sensor_data = frame_model.sensor_data()  # type: SensorModel
-    left_ax = sensor_data.get_sensor_data_axis(hand="left", axis_name="imu_ax")  # type: pd.Series
-    right_ax = sensor_data.get_sensor_data_axis(hand="right", axis_name="imu_ax")  # type: pd.Series
-    left_ax.plot()
-    right_ax.plot()
-    plt.title(f"Test Subject#{name} {song}@{diffi} Performance #{nth}", family="IPAPGothic")
-    plt.savefig("sensor.png")
+    performance_ids = config["DATA"].get("performance_id").split(',')
+    print(performance_ids)
+    for p in performance_ids:
+        print(f"Processing performance id {p}")
+        frame_model, name, song, diffi, nth = read_performance_data(cnx, config, p, args["f"])
+        sensor_data = frame_model.sensor_data()  # type: SensorModel
+        left_ax = sensor_data.get_sensor_data_axis(hand="left", axis_name="imu_ax")  # type: pd.Series
+        right_ax = sensor_data.get_sensor_data_axis(hand="right", axis_name="imu_ax")  # type: pd.Series
+        plt.figure()
+        left_ax.plot()
+        right_ax.plot()
+        plt.legend(["left", "right"])
+        file_name = f"{name}_{song}_{diffi}_{nth}"
+        plt.title(f"Test Subject#{name} {song}@{diffi} Performance #{nth}", family="IPAPGothic")
+        plt.savefig(os.path.join(config["DEFAULT"].get("image_directory"), f"sensor_ax_{file_name}.png"))
     close_connection(cnx)
