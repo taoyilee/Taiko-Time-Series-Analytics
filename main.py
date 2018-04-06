@@ -1,33 +1,9 @@
 #!/bin/python
-import mysql.connector as mysqlc
-import configparser as cp
 import app.video.capture_db_model as video_model
-import argparse
 from app.sensor.sensor_db_model import SensorModel
-import pandas as pd
-import matplotlib.pyplot as plt
-
+from app.utilities import open_connection, close_connection, read_args, read_config
+import configparser as cp
 import os
-
-
-def open_connection(config: cp.ConfigParser):
-    """
-
-    :param config:
-    :return: cnx: mysqlc.MySQLConnection
-    """
-    cnx = mysqlc.connect(host=config["DEFAULT"].get("mysql_host"), user=config["DEFAULT"].get(
-        "mysql_user"), password=config["DEFAULT"].get("mysql_password"))  # type: mysqlc.MySQLConnection
-    return cnx
-
-
-def close_connection(cnx: mysqlc.MySQLConnection):
-    """
-
-    :param cnx:
-    :return:
-    """
-    cnx.close()
 
 
 def read_performance_data(cnx, config: cp.ConfigParser, performance_id, write_frames=False):
@@ -51,26 +27,6 @@ def read_performance_data(cnx, config: cp.ConfigParser, performance_id, write_fr
         frames.write(config["DEFAULT"].get("image_directory"))
     cursor.close()
     return frame_model, name, song, diffi, nth
-
-
-def read_config():
-    """
-    Read configuration file from config.ini
-    :return:
-    """
-    config = cp.ConfigParser()
-    config.read("config.ini")
-    return config
-
-
-def read_args():
-    """
-    Read command line arguments
-    :return: a dictionary of configurations
-    """
-    parser = argparse.ArgumentParser(description='Taiko data analysis toolkit')
-    parser.add_argument('-f', help='Write frames', action='store_true')
-    return vars(parser.parse_args())
 
 
 if __name__ == "__main__":
