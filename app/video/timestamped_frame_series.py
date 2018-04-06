@@ -1,5 +1,4 @@
 from app.video.timestamped_frame import TimestampedFrame
-import os
 
 
 class TimestampedFrameSeries:
@@ -18,3 +17,5 @@ class TimestampedFrameSeries:
     def write(self, image_dir):
         for f in self.frames:
             f.write(image_dir)
+
+    # TODO: Write video file

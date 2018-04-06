@@ -78,18 +78,15 @@ if __name__ == "__main__":
     args = read_args()
     cnx = open_connection(config)
     performance_ids = config["DATA"].get("performance_id").split(',')
-    print(performance_ids)
+
     for p in performance_ids:
         print(f"Processing performance id {p}")
         frame_model, name, song, diffi, nth = read_performance_data(cnx, config, p, args["f"])
         sensor_data = frame_model.sensor_data()  # type: SensorModel
-        left_ax = sensor_data.get_sensor_data_axis(hand="left", axis_name="imu_ax")  # type: pd.Series
-        right_ax = sensor_data.get_sensor_data_axis(hand="right", axis_name="imu_ax")  # type: pd.Series
-        plt.figure()
-        left_ax.plot()
-        right_ax.plot()
-        plt.legend(["left", "right"])
-        file_name = f"{name}_{song}_{diffi}_{nth}"
-        plt.title(f"Test Subject#{name} {song}@{diffi} Performance #{nth}", family="IPAPGothic")
-        plt.savefig(os.path.join(config["DEFAULT"].get("image_directory"), f"sensor_ax_{file_name}.png"))
+        file_name = os.path.join(config["DEFAULT"].get("image_directory"), f"{name}_{song}_{diffi}_{nth}")
+        title = f"Test Subject#{name} {song}@{diffi} Performance #{nth}"
+        sensor_data.plot_sensor_data(hand="all", axis_name="imu_ax", title=title, filename=file_name)
+        sensor_data.plot_sensor_data(hand="all", axis_name="imu_ay", title=title, filename=file_name)
+        sensor_data.plot_sensor_data(hand="all", axis_name="imu_az", title=title, filename=file_name)
+
     close_connection(cnx)
