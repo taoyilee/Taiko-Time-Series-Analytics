@@ -11,6 +11,7 @@ def open_connection(config: cp.ConfigParser):
     """
     cnx = mysqlc.connect(host=config["DEFAULT"].get("mysql_host"), user=config["DEFAULT"].get(
         "mysql_user"), password=config["DEFAULT"].get("mysql_password"))  # type: mysqlc.MySQLConnection
+    cnx.autocommit = True
     return cnx
 
 
