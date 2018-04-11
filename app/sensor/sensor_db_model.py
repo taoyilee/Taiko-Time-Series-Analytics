@@ -34,25 +34,11 @@ class SensorModel:
             time = time.tz_convert(timezone("Asia/Taipei"))
             time_index_timestamp.append(time)
             sensor_data.append(result)
+
         time_index = pd.DatetimeIndex(time_index_timestamp)
+        time_index = time_index - min(time_index)  # type: pd.TimedeltaIndex
+        time_index = time_index.seconds + time_index.microseconds / 1e6
+
         time_series = pd.Series(sensor_data, index=time_index, name=hand)
         cursor.close()
         return time_series
-
-    def plot_sensor_data_axis(self, hand="left", axis_name="imu_ax", ax_num=None):
-        print(f"** Plotting sensor data for {hand} hand on axis {axis_name}")
-        time_series = self.get_sensor_data_axis(hand=hand, axis_name=axis_name)  # type: pd.Series
-        time_series.plot(legend=True)
-
-    def plot_sensor_data(self, hand="left", axis_name="imu_ax", ax_num=None, title=None, filename=None):
-        hand = ["left", "right"] if hand == "all" else [hand]
-        plt.figure(num=ax_num)
-        for h in hand:
-            self.plot_sensor_data_axis(hand=h, axis_name=axis_name, ax_num=ax_num)
-        if filename is not None:
-            plt.title(f"{title} - {axis_name}", family="IPAPGothic")
-            plt.xlabel("Time (Wall Clock)")
-            plt.ylabel("Sensor data")
-            plt.ylim([-2.5, 2.5])
-            plt.grid()
-            plt.savefig(f"{filename}_{axis_name}.png")

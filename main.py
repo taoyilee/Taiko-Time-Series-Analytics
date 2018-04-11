@@ -1,6 +1,8 @@
 #!/bin/python
 import app.video.capture_db_model as video_model
 from app.sensor.sensor_db_model import SensorModel
+from app.sensor.sensor_data import SensorData
+
 from app.utilities import open_connection, close_connection, read_args, read_config
 import configparser as cp
 import os
@@ -38,11 +40,12 @@ if __name__ == "__main__":
     for p in performance_ids:
         print(f"Processing performance id {p}")
         frame_model, name, song, diffi, nth = read_performance_data(cnx, config, p, args["f"])
-        sensor_data = frame_model.sensor_data()  # type: SensorModel
+        sensor_data = SensorData(config,  frame_model.sensor_data())
         file_name = os.path.join(config["DEFAULT"].get("image_directory"), f"{name}_{song}_{diffi}_{nth}")
         title = f"Test Subject#{name} {song}@{diffi} Performance #{nth}"
-        sensor_data.plot_sensor_data(hand="all", axis_name="imu_ax", title=title, filename=file_name)
-        sensor_data.plot_sensor_data(hand="all", axis_name="imu_ay", title=title, filename=file_name)
-        sensor_data.plot_sensor_data(hand="all", axis_name="imu_az", title=title, filename=file_name)
+
+        sensor_data.plot_data(hand="all", axis_name="imu_ax", title=title, filename=file_name)
+        sensor_data.plot_data(hand="all", axis_name="imu_ay", title=title, filename=file_name)
+        sensor_data.plot_data(hand="all", axis_name="imu_az", title=title, filename=file_name)
 
     close_connection(cnx)
