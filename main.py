@@ -22,13 +22,13 @@ def read_performance_data(cnx, config: cp.ConfigParser, performance_id, write_fr
              "ON `taiko_performances`.`song`=`taiko_songs`.`id` "
              f"WHERE taiko_performances.`id`={performance_id} LIMIT 1")
     cursor.execute(query)
-    (_, name, _, nth, year, month, date, hour, minute, second, _, song, diffi) = cursor.next()
+    (_, name, song_id, nth, year, month, date, hour, minute, second, _, song, diffi) = cursor.next()
     frame_model = video_model.CaptureModel(config, cnx, (year, month, date, hour, minute, second))
     if write_frames:
         frames = frame_model.frames()
         frames.write(config["DEFAULT"].get("image_directory"))
     cursor.close()
-    return frame_model, name, song, diffi, nth
+    return frame_model, name, song_id, diffi, nth
 
 
 if __name__ == "__main__":
@@ -40,12 +40,14 @@ if __name__ == "__main__":
     for p in performance_ids:
         print(f"Processing performance id {p}")
         frame_model, name, song, diffi, nth = read_performance_data(cnx, config, p, args["f"])
-        sensor_data = SensorData(config,  frame_model.sensor_data())
+        sensor_data = SensorData(config, frame_model.sensor_data())
         file_name = os.path.join(config["DEFAULT"].get("image_directory"), f"{name}_{song}_{diffi}_{nth}")
         title = f"Test Subject#{name} {song}@{diffi} Performance #{nth}"
 
-        sensor_data.plot_data(hand="all", axis_name="imu_ax", title=title, filename=file_name)
-        sensor_data.plot_data(hand="all", axis_name="imu_ay", title=title, filename=file_name)
-        sensor_data.plot_data(hand="all", axis_name="imu_az", title=title, filename=file_name)
+        sensor_data.plot_speed(title=title, filename=file_name)
+        # sensor_data.plot_data(hand="all", axis_name="imu_ax", title=title, filename=file_name)
+        # sensor_data.plot_data(hand="all", axis_name="imu_ay", title=title, filename=file_name)
+        # sensor_data.plot_data(hand="all", axis_name="imu_az", title=title, filename=file_name)
+        # sensor_data.speed(hand="left")
 
     close_connection(cnx)
