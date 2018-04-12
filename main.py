@@ -44,10 +44,14 @@ if __name__ == "__main__":
         file_name = os.path.join(config["DEFAULT"].get("image_directory"), f"{name}_{song}_{diffi}_{nth}")
         title = f"Test Subject#{name} {song}@{diffi} Performance #{nth}"
 
-        sensor_data.plot_speed(title=title, filename=file_name)
+        speed_data = sensor_data.plot_speed(title=title, filename=file_name)
         # sensor_data.plot_data(hand="all", axis_name="imu_ax", title=title, filename=file_name)
         # sensor_data.plot_data(hand="all", axis_name="imu_ay", title=title, filename=file_name)
         # sensor_data.plot_data(hand="all", axis_name="imu_az", title=title, filename=file_name)
         # sensor_data.speed(hand="left")
+        frames = frame_model.frames()
+        video_dir = os.path.join(config["DEFAULT"].get("image_directory"), f"video_{name}")
+        os.makedirs(video_dir, exist_ok=True)
+        frames.write_video(video_dir)
 
     close_connection(cnx)

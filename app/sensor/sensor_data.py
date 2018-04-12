@@ -36,6 +36,7 @@ class SensorData:
         if filename is not None:
             plt.savefig(f"{filename}_speed.png")
         plt.close()
+        return data
 
     def speed(self, arm_length=1):
         data_ax_left = self.sensor_db_model.get_sensor_data_axis(hand="left", axis_name="imu_ax")

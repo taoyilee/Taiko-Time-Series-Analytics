@@ -11,6 +11,7 @@ import io
 from app.sensor.sensor_db_model import SensorModel
 from app.video.timestamped_frame import TimestampedFrame
 from app.video.timestamped_frame_series import TimestampedFrameSeries
+import numpy as np
 
 
 class CaptureModel:
@@ -62,10 +63,10 @@ class CaptureModel:
 
         cursor = self.cnx.cursor(buffered=True)  # type: cursor.MySQLCursor
         query = f"USE `{database_name[hand]}`"
-        print(query) if self.verbosity > 0 else None
+        print(query) if self.verbosity > 1 else None
         cursor.execute(query)
         query = f"SHOW tables"
-        print(query) if self.verbosity > 0 else None
+        print(query) if self.verbosity > 1 else None
         cursor.execute(query)
         tables = []
         for result in cursor:
@@ -93,23 +94,27 @@ class CaptureModel:
 
     def frames(self):
         cursor_capture = self.cnx.cursor(buffered=True)  # type: cursor.MySQLCursor
-        query = f"SELECT * FROM `{self.capture_db}`.`{self.data_table_name}`"
-        print(query) if self.verbosity > 0 else None
+        query = f"SELECT `timestamp`, `image_base64` FROM `{self.capture_db}`.`{self.data_table_name}`"
+        print(query) if self.verbosity > 1 else None
         cursor_capture.execute(query)
-        print(f"Query: {self.capture_db}/{self.data_table_name} for video captures") if self.verbosity > 0 else None
+        print(f"Query: {self.capture_db}/{self.data_table_name} for video captures") if self.verbosity > 1 else None
         timestamp0 = 1e10
+        prev_time = -1
         frames = TimestampedFrameSeries()
-        for (_, timestamp, _, width, height, img_base64) in cursor_capture:
+        for (timestamp, img_base64) in cursor_capture:
             if timestamp < timestamp0:
                 timestamp0 = timestamp
             t = timestamp - timestamp0
-            print(f"{t:.4f} {width}X{height} px") if self.verbosity > 0 else None
             img_bytes = imgdec.decode(img_base64)
+            fps = 1 / (t - prev_time)
             current_frame = Image.open(io.BytesIO(img_bytes))  # type: Image.Image
+            print(
+                f"{t:.4f}s ({fps:.1f} fps) {np.shape(current_frame)[1]}X{np.shape(current_frame)[0]} px") if self.verbosity > 0 else None
             (b, g, r) = current_frame.split()
             current_frame = Image.merge("RGB", (r, g, b))
             image_draw = ImageDraw.Draw(current_frame)  # type: ImageDraw.Draw
             image_draw.text((0, 0), f"{t:.4f}", (255, 0, 0))
             frames.append(TimestampedFrame(current_frame, timestamp))
+            prev_time = t
         cursor_capture.close()
         return frames

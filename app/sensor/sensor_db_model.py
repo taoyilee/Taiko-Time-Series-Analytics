@@ -25,7 +25,7 @@ class SensorModel:
         query = (f"SELECT `timestamp`, `{axis_name}`  FROM `{database_name[hand]}`.`{self.table_name[hand]}` "
                  f"WHERE `timestamp` BETWEEN {self.start_time.timestamp()} "
                  f"AND {self.end_time.timestamp()} ORDER BY `timestamp` ASC")
-        print(f"** {query}") if self.verbosity > 0 else None
+        print(f"** {query}") if self.verbosity > 1 else None
         cursor.execute(query)
         sensor_data = []
         time_index_timestamp = []
