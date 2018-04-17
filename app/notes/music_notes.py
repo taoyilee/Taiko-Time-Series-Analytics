@@ -2,12 +2,13 @@ import mysql.connector
 import os
 import matplotlib.pyplot as plt
 import numpy as np
+from app.dbutils import MySQLTaiko
 
 
-def plot_notes(config, cnx: mysql.connector.MySQLConnection, song_id, plt_handle: plt, offset=0, height=1,
+def plot_notes(config, database_handle: MySQLTaiko, song_id, plt_handle: plt, offset=0, height=1,
                base_value=0):
-    cnx.database = "bb_subjects"
-    cur = cnx.cursor()
+    database_handle.set_database("bb_subjects")
+    cur = database_handle.cursor()
     query = ("SELECT `timestamp`, `type`, `bpm`"
              " FROM `taiko_notes` "
              f"WHERE `id`={song_id} ORDER BY `sequence` ASC")

@@ -1,27 +1,5 @@
-import mysql.connector as mysqlc
 import configparser as cp
 import argparse
-
-
-def open_connection(config: cp.ConfigParser):
-    """
-
-    :param config:
-    :return: cnx: mysqlc.MySQLConnection
-    """
-    cnx = mysqlc.connect(host=config["DEFAULT"].get("mysql_host"), user=config["DEFAULT"].get(
-        "mysql_user"), password=config["DEFAULT"].get("mysql_password"))  # type: mysqlc.MySQLConnection
-    cnx.autocommit = True
-    return cnx
-
-
-def close_connection(cnx: mysqlc.MySQLConnection):
-    """
-
-    :param cnx:
-    :return:
-    """
-    cnx.close()
 
 
 def read_config():

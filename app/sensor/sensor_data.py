@@ -11,13 +11,14 @@ import io
 from app.notes.music_notes import plot_notes
 import cv2
 import os
+from app.dbutils import MySQLTaiko
 
 
 class SensorData:
     verbosity = 0
 
-    def __init__(self, config: cp.ConfigParser, cnx, sensor_db_model: SensorModel, song_id):
-        self.cnx = cnx
+    def __init__(self, config: cp.ConfigParser, database_handle: MySQLTaiko, sensor_db_model: SensorModel, song_id):
+        self.database_handle = database_handle
         self.song_id = song_id
         self.config = config
         self.sensor_db_model = sensor_db_model
@@ -71,7 +72,8 @@ class SensorData:
         data.plot()
         y_range = 300
         if show_ideal:
-            legend_names = plot_notes(self.config, self.cnx, self.song_id, plt, offset, 2 * y_range, -y_range)
+            legend_names = plot_notes(self.config, self.database_handle, self.song_id, plt, offset, 2 * y_range,
+                                      -y_range)
         plt.legend(["signal"] + legend_names)
         plt.xticks(np.arange(0, 120, 4))
         plt.xlim([0, max(data.index)])

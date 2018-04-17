@@ -1,0 +1,1 @@
+from .capture_db_model import CaptureModel

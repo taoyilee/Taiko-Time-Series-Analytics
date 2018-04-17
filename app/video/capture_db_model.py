@@ -12,14 +12,15 @@ from app.sensor.sensor_db_model import SensorModel
 from app.video.timestamped_frame import TimestampedFrame
 from app.video.timestamped_frame_series import TimestampedFrameSeries
 import numpy as np
+from app.dbutils import MySQLTaiko
 
 
 class CaptureModel:
     verbosity = 0
 
-    def __init__(self, config: cp.ConfigParser, cnx: mysqlc.Connect, time_stamp):
+    def __init__(self, config: cp.ConfigParser, database_handle: MySQLTaiko, time_stamp):
         self.config = config
-        self.cnx = cnx  # type: mysqlc.MySQLConnection
+        self.database_handle = database_handle
         self.time_stamp = time_stamp
         self.capture_db = self.config["CAPTURE"].get("database_name")
         (year, month, date, hour, minute, second) = self.time_stamp
@@ -27,7 +28,7 @@ class CaptureModel:
         self.verbosity = config["DEFAULT"].getint("verbosity")
 
     def timestamps(self, wall_clock=False):
-        cursor_capture = self.cnx.cursor(buffered=True)  # type: cursor.MySQLCursor
+        cursor_capture = self.database_handle.cursor()
         column = "wall_time" if wall_clock else "timestamp"
         query = (f"SELECT `{column}`  FROM `{self.capture_db}`.`{self.data_table_name}` "
                  "ORDER BY `timestamp` ASC LIMIT 1")
@@ -55,23 +56,20 @@ class CaptureModel:
     def sensor_data(self):
         (left_table, right_table) = self.find_table()
         (begin_time, end_time) = self.timestamps()
-        return SensorModel(self.config, self.cnx, (left_table, right_table), begin_time, end_time)
+        return SensorModel(self.config, self.database_handle, (left_table, right_table), begin_time, end_time)
 
     def sensor_data_table(self, hand="left"):
         database_name = {"left": self.config["CAPTURE"].get("database_left"),
                          "right": self.config["CAPTURE"].get("database_right")}
 
-        cursor = self.cnx.cursor(buffered=True)  # type: cursor.MySQLCursor
-        query = f"USE `{database_name[hand]}`"
-        print(query) if self.verbosity > 1 else None
-        cursor.execute(query)
+        cursor = self.database_handle.cursor()
+        self.database_handle.set_database(database_name[hand])
         query = f"SHOW tables"
         print(query) if self.verbosity > 1 else None
         cursor.execute(query)
         tables = []
         for result in cursor:
             tables.append(result[0])
-        cursor.execute(query)
         cursor.close()
         if not tables:
             raise ValueError(f"No appropriate sensor data table for corresponding video frames")
@@ -93,7 +91,7 @@ class CaptureModel:
                 return tables[i - 1]
 
     def frames(self):
-        cursor_capture = self.cnx.cursor(buffered=True)  # type: cursor.MySQLCursor
+        cursor_capture = self.database_handle.cursor()
         query = f"SELECT `timestamp`, `image_base64` FROM `{self.capture_db}`.`{self.data_table_name}`"
         print(query) if self.verbosity > 1 else None
         cursor_capture.execute(query)
