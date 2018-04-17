@@ -6,15 +6,57 @@ from scipy import interpolate
 import pandas as pd
 from sklearn.decomposition import PCA
 import numpy as np
+from PIL import Image
+import io
+from app.notes.music_notes import plot_notes
+import cv2
+import os
 
 
 class SensorData:
     verbosity = 0
 
-    def __init__(self, config: cp.ConfigParser, sensor_db_model: SensorModel):
+    def __init__(self, config: cp.ConfigParser, cnx, sensor_db_model: SensorModel, song_id):
+        self.cnx = cnx
+        self.song_id = song_id
         self.config = config
         self.sensor_db_model = sensor_db_model
         self.verbosity = config["DEFAULT"].getint("verbosity")
+
+    def plot_curve_only_axis(self, hand="left", axis_name="imu_ax", ax_num=None, title=None, filename=None):
+        print(f"** Plotting sensor data for {hand} hand on axis {axis_name}")
+        data = self.sensor_db_model.get_sensor_data_axis(hand=hand, axis_name=axis_name)
+        total_steps = 200
+        step_size = max(data.index) / total_steps
+        print(f"Using step_size of {step_size}")
+        steps = np.arange(0, max(data.index), step_size)
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+
+        plt.figure(num=ax_num)
+        data.plot()
+        plt.axvspan(17.5, 19, color='red', alpha=0.5)
+        plt.axis("off")
+        buf = io.BytesIO()
+        plt.savefig(buf)  # , transparent=True)
+        im = Image.open(buf)  # type: Image.Image
+        size = np.shape(im)[1], np.shape(im)[0]
+        out = cv2.VideoWriter(os.path.join("video_output.avi"), fourcc, 15, size, 1)
+
+        for i, step_i in enumerate(steps):
+            plt.xlim([step_i, step_i + 10 * step_size])
+            buf = io.BytesIO()
+            plt.savefig(buf)  # , transparent=True)
+            im = Image.open(buf)  # type: Image.Image
+            frame = cv2.resize(np.array(im)[:, :, 0:3], size)
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            out.write(frame)
+            plt.savefig(os.path.join(f"image_{i}.png"), transparent=True)
+
+        out.release()
+        cv2.destroyAllWindows()
+
+        im.save(f"{filename}_{axis_name}_im.png")
+        plt.close()
 
     def plot_data_axis(self, hand="left", axis_name="imu_ax", ax_num=None):
         print(f"** Plotting sensor data for {hand} hand on axis {axis_name}")
@@ -23,18 +65,52 @@ class SensorData:
         data.plot(legend=True)
         plt.xlim([0, max(data.index)])
 
-    def plot_speed(self, arm_length=1, ax_num=0, title=None, filename=None):
+    def plot_speed(self, arm_length=1, ax_num=0, title=None, filename=None, show_ideal=True, offset=0):
         data = self.speed(arm_length=arm_length)
         plt.figure(num=ax_num, figsize=(14, 8))
         data.plot()
+        y_range = 300
+        if show_ideal:
+            legend_names = plot_notes(self.config, self.cnx, self.song_id, plt, offset, 2 * y_range, -y_range)
+        plt.legend(["signal"] + legend_names)
+        plt.xticks(np.arange(0, 120, 4))
         plt.xlim([0, max(data.index)])
         plt.title(f"{title} - Speed", family="IPAPGothic")
         plt.xlabel("Time (seconds)")
         plt.ylabel("Sensor data (PCA)")
-        plt.ylim([-300, 300])
+        plt.ylim([-y_range, y_range])
         plt.grid()
         if filename is not None:
-            plt.savefig(f"{filename}_speed.png")
+            output_file = f"{filename}_speed.png"
+            print(f"Saving figure to {output_file}")
+            plt.savefig(output_file)
+
+        # save video
+        total_steps = 200
+        step_size = max(data.index) / total_steps
+        print(f"Using step_size of {step_size}")
+        steps = np.arange(0, max(data.index), step_size)
+        fourcc = cv2.VideoWriter_fourcc(*'XVID')
+
+        buf = io.BytesIO()
+        plt.savefig(buf)  # , transparent=True)
+        im = Image.open(buf)  # type: Image.Image
+        size = np.shape(im)[1], np.shape(im)[0]
+        out = cv2.VideoWriter(os.path.join("images", "speed_video_output.avi"), fourcc, 15, size, 1)
+
+        for i, step_i in enumerate(steps):
+            plt.xlim([step_i, step_i + 10 * step_size])
+            buf = io.BytesIO()
+            plt.savefig(buf)  # , transparent=True)
+            im = Image.open(buf)  # type: Image.Image
+            frame = cv2.resize(np.array(im)[:, :, 0:3], size)
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            out.write(frame)
+            # plt.savefig(os.path.join(f"image_{i}.png"), transparent=True)
+
+        out.release()
+        cv2.destroyAllWindows()
+
         plt.close()
         return data
 

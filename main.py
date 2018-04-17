@@ -28,7 +28,7 @@ def read_performance_data(cnx, config: cp.ConfigParser, performance_id, write_fr
         frames = frame_model.frames()
         frames.write(config["DEFAULT"].get("image_directory"))
     cursor.close()
-    return frame_model, name, song_id, diffi, nth
+    return frame_model, name, song_id, song, diffi, nth
 
 
 if __name__ == "__main__":
@@ -39,19 +39,20 @@ if __name__ == "__main__":
 
     for p in performance_ids:
         print(f"Processing performance id {p}")
-        frame_model, name, song, diffi, nth = read_performance_data(cnx, config, p, args["f"])
-        sensor_data = SensorData(config, frame_model.sensor_data())
-        file_name = os.path.join(config["DEFAULT"].get("image_directory"), f"{name}_{song}_{diffi}_{nth}")
-        title = f"Test Subject#{name} {song}@{diffi} Performance #{nth}"
+        frame_model, name, song_id, song, diffi, nth = read_performance_data(cnx, config, p, args["f"])
+        sensor_data = SensorData(config, cnx, frame_model.sensor_data(), song_id)
+        file_name = os.path.join(config["DEFAULT"].get("image_directory"), f"{name}_{song_id}_{diffi}_{nth}_curve")
+        title = f"Test Subject#{name} {song}({song_id})@{diffi} Performance #{nth}"
 
-        speed_data = sensor_data.plot_speed(title=title, filename=file_name)
+        speed_data = sensor_data.plot_speed(title=title, filename=file_name, offset=11.8)
         # sensor_data.plot_data(hand="all", axis_name="imu_ax", title=title, filename=file_name)
+        # sensor_data.plot_curve_only_axis(hand="left", axis_name="imu_ax", title=title, filename=file_name)
         # sensor_data.plot_data(hand="all", axis_name="imu_ay", title=title, filename=file_name)
         # sensor_data.plot_data(hand="all", axis_name="imu_az", title=title, filename=file_name)
         # sensor_data.speed(hand="left")
-        frames = frame_model.frames()
-        video_dir = os.path.join(config["DEFAULT"].get("image_directory"), f"video_{name}")
-        os.makedirs(video_dir, exist_ok=True)
-        frames.write_video(video_dir)
+        # frames = frame_model.frames()
+        # video_dir = os.path.join(config["DEFAULT"].get("image_directory"), f"video_{name}")
+        # os.makedirs(video_dir, exist_ok=True)
+        # frames.write_video(video_dir)
 
     close_connection(cnx)
